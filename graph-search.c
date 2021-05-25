@@ -1,25 +1,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct vertex {
+#define MAX_VERTEX_SIZE		10
+
+typedef struct vertex 
+{
 	int key;
 	struct vertex *next;
-    struct vertex *edge[10];
 } Vertex;
 
-#define MAX_VERTEX_SIZE		10
-int vertexcount = 0;
+typedef struct graph
+{
+    int num;
+    Vertex* graphEdge[MAX_VERTEX_SIZE];
+} Graph;
 
-int freeVertex(Vertex* h);
-void InitializeGraph(Vertex** h);
-int InsertVertex(Vertex *head, int key);
-int InsertEdge(Vertex *head, int key);
-void printVertex(Vertex *head);
+
+int vertexcount = 0;
+#define FALSE 0
+#define TRUE 1
+short int visited[MAX_VERTEX_SIZE];
+
+
+int freeVertex(Graph* h);
+void InitializeGraph(Graph** h);
+void InsertVertex(Graph *head, int key);
+int InsertEdge(Graph *head, int key);
+void printVertex(Graph *head);
+void DepthFirstSearch(Graph *head);
+void DFS(Graph *head, int v);
+void BreathFirstSearch();
+void BFS();
 
 int main()
 {
     int key;
-    Vertex* head = NULL;
+    Graph* head = NULL;
     char command;
     printf("\t\t[----- [Kim Tae In]] [2018038033] -----]\n");
 
@@ -43,7 +59,7 @@ int main()
             InitializeGraph(&head);
             break;
         case 'q': case 'Q':
-            freeVertex(head);
+            freeGraph(head);
             break;
         case 'v': case 'V':
             printf("Insert Vertex : ");
@@ -52,6 +68,7 @@ int main()
             InsertVertex(head, key);
             break;
         case 'd': case 'D':
+            DepthFirstSearch(head);
             break;
         case 'p': case 'P':
             printVertex(head);
@@ -72,209 +89,117 @@ int main()
     return 1;
 }
 
-int freeVertex(Vertex* h)
+int freeGraph(Graph* h)
 {
-    Vertex* prevVertex = NULL;
-    Vertex* tempVertex = h->next;
+    int i; 
 
-	while(tempVertex != NULL) {
-		prevVertex = tempVertex;
-		tempVertex = tempVertex->next;
-		free(prevVertex);
-	}
-	free(h);
+    for(i = 0; i < h->num; i++)
+        free(h->graphEdge[i]);
+
+    free(h);
 	return 0;
+
 }
 
-void InitializeGraph(Vertex** h)
+void InitializeGraph(Graph** h)
 {
+    int i;
+
     if(*h != NULL)
-		freeVertex(*h);
+		freeGraph(*h);
 
-    int i;
-	*h = (Vertex*)malloc(sizeof(Vertex));
-	(*h)->next = NULL;	
-	(*h)->key = -1;
+	*h = (Graph*)malloc(sizeof(Graph));
+    (*h)->num = 0;
     for(i = 0; i < MAX_VERTEX_SIZE; i++)
-    {
-        (*h)->edge[i] = NULL;
-    }
+        (*h)->graphEdge[i] = NULL;
+
 }
 
-int InsertVertex(Vertex *head, int key)
+void InsertVertex(Graph *head, int key)
 {
-    if(key > 9)
-    {
-        printf("ERROR");
-        return 0;
-    }
-    int i;
-    if(vertexcount > 10)
-    {
-        printf("\nMAX Vertax count\n");
-        vertexcount--;
-        return 0;
-    }
-    Vertex* newVertex = (Vertex*)malloc(sizeof(Vertex));
-	newVertex->key = key;
-    newVertex->next = NULL;
-    for(i = 0; i < MAX_VERTEX_SIZE; i++)
-    {
-        newVertex->edge[i] = NULL;
-    }
-
-    Vertex* tempVertex = head->next;
-    Vertex* checkVertex = head->next;
-    
-    if(checkVertex != NULL)
-    {
-        while(checkVertex != NULL)
-        {
-            if(checkVertex->key == key)
-            {
-                printf("Error\n");
-                vertexcount--;
-                return 0;
-            }
-            checkVertex = checkVertex->next;
-        }
-    }
-    
-
-    if (head->next == NULL)
-    {
-        head->next = newVertex;
-        return 0;
-    }
-    else if (head->next != NULL)
-    {
-        if (tempVertex->key > newVertex ->key)
-        {
-            newVertex->next = tempVertex;
-            head->next = newVertex;
-            return 0;
-        }
-        else if (tempVertex->key < newVertex->key)
-        {
-            while(tempVertex->next != NULL)
-            {
-                if(tempVertex->key < newVertex->key)
-                {
-                    tempVertex = tempVertex ->next;
-                }   
-                else
-                    break;
-            }
-            
-            if(tempVertex->next == NULL)
-            {
-                tempVertex->next = newVertex;
-                return 0;
-            }
-            else if (tempVertex ->next != NULL)
-            {
-                tempVertex->next = newVertex;
-                newVertex->next = tempVertex->next->next;
-                return 0;
-            }
-        }
-    }
-    return 0;
+    head->graphEdge[head->num] = (Vertex*)malloc(sizeof(Vertex));
+    head->graphEdge[head->num]->key = -1;
+    head->graphEdge[head->num]->next = NULL;
+    head->num++;
 }
 
-int InsertEdge(Vertex *head, int key)
+int InsertEdge(Graph *head, int key)
 {
+
+
     int edgekey;
-    int i;
-    Vertex* tempVertex = head->next;
-    Vertex* findVertex = head->next;
-    Vertex* tempEdge = NULL;
-
-    while(tempVertex->next != NULL)
-    {
-        if(tempVertex->key == key)
-            break;
-        else
-            tempVertex = tempVertex -> next;
-    }
     printf("Insert Edge : ");
     scanf("%d", &edgekey);
-    
-    if(tempVertex->key == edgekey)
+
+    Vertex* tempVertex1 = (Vertex*)malloc(sizeof(Vertex));
+    Vertex* tempVertex2 = (Vertex*)malloc(sizeof(Vertex));
+
+    tempVertex1->key = key;
+    tempVertex1->next = NULL;
+    tempVertex2->key = edgekey;
+    tempVertex2->next = NULL;
+
+    if(head->graphEdge[key] == NULL)
+        head->graphEdge[key] = tempVertex2;
+    else
     {
-        printf("Error\n");
-        return 0;
+        tempVertex2->next = head->graphEdge[key];
+        head->graphEdge[key] = tempVertex2;
     }
 
-    for(i = 0; i< MAX_VERTEX_SIZE; i++)
+    if(head->graphEdge[edgekey] == NULL)
+        head->graphEdge[edgekey] = tempVertex1;
+    else
     {
-        if(tempVertex->edge[i] != NULL)
-        {
-            if(tempVertex->edge[i]->key == edgekey)
-            {
-                printf("Error\n");
-                return 0;
-            }
-        }
+        tempVertex1->next = head->graphEdge[edgekey];
+        head->graphEdge[edgekey] = tempVertex1;
     }
 
-    while(findVertex->next != NULL)
-    {
-        if(findVertex->key == edgekey)
-            break;
-        else
-            findVertex = findVertex->next;
-    }
-    
-    if(findVertex->key != edgekey)
-    {
-        printf("Error\n");
-        return 0;
-    }
-
-    for(i = 0; i<MAX_VERTEX_SIZE; i++)
-    {
-        if(tempVertex->edge[i] ==NULL)
-        {
-            tempVertex->edge[i] = findVertex;
-            break;
-        }
-            
-    }
-    
-    for(i = 0; i<MAX_VERTEX_SIZE; i++)
-    {
-        if(findVertex->edge[i] ==NULL)
-        {
-            findVertex->edge[i] = tempVertex;
-            break;
-        }
-    }
-    
-    return 0;
 }
 
-void printVertex(Vertex *head)
+void printVertex(Graph *head)
 {
-    int i;
-    int j;
-    Vertex* tempVertex = head->next;
-    Vertex* tempEdge = NULL;
-    printf("Vertxe\tEdge\n");
-    for(i = 0 ; i < vertexcount; i++)
+    int i, j;
+    printf("Vertex\tEdge\n");
+    for(i = 0; i < head->num; i++)
     {
-        printf("[%d]\t",tempVertex->key);
-        for(j=0; j< MAX_VERTEX_SIZE ; j++)
+        printf("[%d]\t", i);
+        for(j = 0; j < MAX_VERTEX_SIZE; j++)
         {
-            if(tempVertex->edge[j] != NULL)
-            {
-                printf("%d  ", tempVertex->edge[j]->key);
-            }
-            else
-                break;   
+            if(head->graphEdge[j] == NULL)
+                break;
+            printf("%d  ",head->graphEdge[j]->key);
         }
-        
-        tempVertex = tempVertex->next;
         printf("\n");
     }
+}
+
+void DepthFirstSearch(Graph *head)
+{
+    int v;
+    printf("Vertax Number : ");
+    scanf("%d", &v);
+    DFS(head, v);
+    printf("\n");
+}
+
+void DFS(Graph *graph,int v)
+{
+    Vertex *w;
+    visited[v] = TRUE;
+    printf("%5d", v);
+    for (w = graph->graphEdge[v]; w; w = w -> next)
+        if (!visited[w->key])
+            DFS(w->next, v);
+
+}
+
+void BreathFirstSearch()
+{
+
+}
+
+void BFS()
+{
+    
 }
