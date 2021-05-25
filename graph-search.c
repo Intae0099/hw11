@@ -10,6 +10,7 @@ typedef struct vertex {
 #define MAX_VERTEX_SIZE		10
 int vertexcount = 0;
 
+int freeVertex(Vertex* h);
 void InitializeGraph(Vertex** h);
 int InsertVertex(Vertex *head, int key);
 int InsertEdge(Vertex *head, int key);
@@ -42,7 +43,7 @@ int main()
             InitializeGraph(&head);
             break;
         case 'q': case 'Q':
-            printf("프로그램 종료");
+            freeVertex(head);
             break;
         case 'v': case 'V':
             printf("Insert Vertex : ");
@@ -71,8 +72,25 @@ int main()
     return 1;
 }
 
+int freeVertex(Vertex* h)
+{
+    Vertex* prevVertex = NULL;
+    Vertex* tempVertex = h->next;
+
+	while(tempVertex != NULL) {
+		prevVertex = tempVertex;
+		tempVertex = tempVertex->next;
+		free(prevVertex);
+	}
+	free(h);
+	return 0;
+}
+
 void InitializeGraph(Vertex** h)
 {
+    if(*h != NULL)
+		freeVertex(*h);
+
     int i;
 	*h = (Vertex*)malloc(sizeof(Vertex));
 	(*h)->next = NULL;	
@@ -85,6 +103,12 @@ void InitializeGraph(Vertex** h)
 
 int InsertVertex(Vertex *head, int key)
 {
+    if(key > 9)
+    {
+        printf("ERROR");
+        return 0;
+    }
+    int i;
     if(vertexcount > 10)
     {
         printf("\nMAX Vertax count\n");
@@ -94,10 +118,29 @@ int InsertVertex(Vertex *head, int key)
     Vertex* newVertex = (Vertex*)malloc(sizeof(Vertex));
 	newVertex->key = key;
     newVertex->next = NULL;
-    newVertex->edge[0] = NULL;
+    for(i = 0; i < MAX_VERTEX_SIZE; i++)
+    {
+        newVertex->edge[i] = NULL;
+    }
+
     Vertex* tempVertex = head->next;
-    Vertex* prevVertex = NULL;
-        
+    Vertex* checkVertex = head->next;
+    
+    if(checkVertex != NULL)
+    {
+        while(checkVertex != NULL)
+        {
+            if(checkVertex->key == key)
+            {
+                printf("Error\n");
+                vertexcount--;
+                return 0;
+            }
+            checkVertex = checkVertex->next;
+        }
+    }
+    
+
     if (head->next == NULL)
     {
         head->next = newVertex;
@@ -117,7 +160,6 @@ int InsertVertex(Vertex *head, int key)
             {
                 if(tempVertex->key < newVertex->key)
                 {
-                    prevVertex = tempVertex;
                     tempVertex = tempVertex ->next;
                 }   
                 else
@@ -143,7 +185,7 @@ int InsertVertex(Vertex *head, int key)
 int InsertEdge(Vertex *head, int key)
 {
     int edgekey;
-    int j = 0;
+    int i;
     Vertex* tempVertex = head->next;
     Vertex* findVertex = head->next;
     Vertex* tempEdge = NULL;
@@ -157,7 +199,24 @@ int InsertEdge(Vertex *head, int key)
     }
     printf("Insert Edge : ");
     scanf("%d", &edgekey);
+    
+    if(tempVertex->key == edgekey)
+    {
+        printf("Error\n");
+        return 0;
+    }
 
+    for(i = 0; i< MAX_VERTEX_SIZE; i++)
+    {
+        if(tempVertex->edge[i] != NULL)
+        {
+            if(tempVertex->edge[i]->key == edgekey)
+            {
+                printf("Error\n");
+                return 0;
+            }
+        }
+    }
 
     while(findVertex->next != NULL)
     {
@@ -166,31 +225,30 @@ int InsertEdge(Vertex *head, int key)
         else
             findVertex = findVertex->next;
     }
-
-    j = findVertex->key;
-
-    if(tempVertex->edge[j] == NULL)
+    
+    if(findVertex->key != edgekey)
     {
-        tempVertex->edge[j] = findVertex;
+        printf("Error\n");
         return 0;
     }
-    else
-    {
-        tempEdge = tempVertex->edge[j];
-        while(tempVertex->edge[j] != NULL)
-        {
-            if(tempVertex->edge[j] == NULL)
-            {
-                break;
-            }
-            else
-            {
-                tempEdge = tempEdge->edge[j];
-            }
-                
 
+    for(i = 0; i<MAX_VERTEX_SIZE; i++)
+    {
+        if(tempVertex->edge[i] ==NULL)
+        {
+            tempVertex->edge[i] = findVertex;
+            break;
         }
-        tempEdge->edge[j] = findVertex;
+            
+    }
+    
+    for(i = 0; i<MAX_VERTEX_SIZE; i++)
+    {
+        if(findVertex->edge[i] ==NULL)
+        {
+            findVertex->edge[i] = tempVertex;
+            break;
+        }
     }
     
     return 0;
@@ -198,23 +256,24 @@ int InsertEdge(Vertex *head, int key)
 
 void printVertex(Vertex *head)
 {
-    int i = 0;
-    int j = 0;
+    int i;
+    int j;
     Vertex* tempVertex = head->next;
     Vertex* tempEdge = NULL;
     printf("Vertxe\tEdge\n");
-    for(i ; i < vertexcount; i++)
+    for(i = 0 ; i < vertexcount; i++)
     {
         printf("[%d]\t",tempVertex->key);
-        tempEdge = tempVertex->edge[i];
-        for(j; j < MAX_VERTEX_SIZE; j++)
+        for(j=0; j< MAX_VERTEX_SIZE ; j++)
         {
-            if(tempVertex->edge[i] != NULL)
-                printf("%d\t", tempEdge->key);
-            
-            if(tempEdge->edge[i] != NULL)
-                tempEdge = tempEdge->edge[i];
+            if(tempVertex->edge[j] != NULL)
+            {
+                printf("%d  ", tempVertex->edge[j]->key);
+            }
+            else
+                break;   
         }
+        
         tempVertex = tempVertex->next;
         printf("\n");
     }
