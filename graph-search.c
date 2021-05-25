@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #define MAX_VERTEX_SIZE		10
+#define MAX_QUEUE_SIZE      10
 
 typedef struct vertex 
 {
@@ -21,20 +22,26 @@ int vertexcount = 0;
 #define TRUE 1
 short int visited[MAX_VERTEX_SIZE];
 
+int front = 0;
+int rear = 0;
+int queue[MAX_QUEUE_SIZE];
 
-int freeVertex(Graph* h);
+
+int freeGraph(Graph* h);
 void InitializeGraph(Graph** h);
-void InsertVertex(Graph *head, int key);
+void InsertVertex(Graph *head);
 int InsertEdge(Graph *head, int key);
 void printVertex(Graph *head);
-void DepthFirstSearch(Graph *head);
-void DFS(Graph *head, int v);
+void DepthFirstSearch(Graph *head, int v);
+void DFS(Vertex *head, int v);
 void BreathFirstSearch();
-void BFS();
+void BFS(Graph *head, int v);
+void enQueue(int n);
+int deQueue();
 
 int main()
 {
-    int key;
+    int key, v;
     Graph* head = NULL;
     char command;
     printf("\t\t[----- [Kim Tae In]] [2018038033] -----]\n");
@@ -62,13 +69,13 @@ int main()
             freeGraph(head);
             break;
         case 'v': case 'V':
-            printf("Insert Vertex : ");
-            scanf("%d", &key);
             vertexcount++;
-            InsertVertex(head, key);
+            InsertVertex(head);
             break;
         case 'd': case 'D':
-            DepthFirstSearch(head);
+            printf("Vertax Number : ");
+            scanf("%d", &v);
+            DepthFirstSearch(head, v);
             break;
         case 'p': case 'P':
             printVertex(head);
@@ -79,7 +86,9 @@ int main()
             InsertEdge(head, key);
             break;
         case 'b': case 'B':
-
+            printf("Vertax Number : ");
+            scanf("%d", &v);
+            BFS(head, v);
             break;
 
     }
@@ -115,44 +124,70 @@ void InitializeGraph(Graph** h)
 
 }
 
-void InsertVertex(Graph *head, int key)
+void InsertVertex(Graph *head)
 {
+    if(head->num > 9)
+    {
+        printf("Error\n");
+        return ;
+    }
     head->graphEdge[head->num] = (Vertex*)malloc(sizeof(Vertex));
     head->graphEdge[head->num]->key = -1;
     head->graphEdge[head->num]->next = NULL;
     head->num++;
 }
 
-int InsertEdge(Graph *head, int key)
+int InsertEdge(Graph *head, int v)
 {
 
 
-    int edgekey;
+    int u, i;
     printf("Insert Edge : ");
-    scanf("%d", &edgekey);
+    scanf("%d", &u);
 
-    Vertex* tempVertex1 = (Vertex*)malloc(sizeof(Vertex));
-    Vertex* tempVertex2 = (Vertex*)malloc(sizeof(Vertex));
-
-    tempVertex1->key = key;
-    tempVertex1->next = NULL;
-    tempVertex2->key = edgekey;
-    tempVertex2->next = NULL;
-
-    if(head->graphEdge[key] == NULL)
-        head->graphEdge[key] = tempVertex2;
-    else
+    if(v == u)
     {
-        tempVertex2->next = head->graphEdge[key];
-        head->graphEdge[key] = tempVertex2;
+        printf("Error\n");
+        return 0;
     }
 
-    if(head->graphEdge[edgekey] == NULL)
-        head->graphEdge[edgekey] = tempVertex1;
+    Vertex* check = head->graphEdge[v];
+
+    if(check != NULL)
+    {
+        while(check != NULL)
+        {
+            if(check->key == u)
+            {
+                printf("Error\n");
+                return 0;
+            }
+            check = check->next;
+        }
+    }
+    
+    Vertex* tempVertex_v = (Vertex*)malloc(sizeof(Vertex));
+    Vertex* tempVertex_u = (Vertex*)malloc(sizeof(Vertex));
+
+    tempVertex_v->key = v;
+    tempVertex_v->next = NULL;
+    tempVertex_u->key = u;
+    tempVertex_u->next = NULL;
+
+    if(head->graphEdge[v] == NULL)
+        head->graphEdge[v] = tempVertex_u;
     else
     {
-        tempVertex1->next = head->graphEdge[edgekey];
-        head->graphEdge[edgekey] = tempVertex1;
+        tempVertex_u->next = head->graphEdge[v];
+        head->graphEdge[v] = tempVertex_u;
+    }
+
+    if(head->graphEdge[u] == NULL)
+        head->graphEdge[u] = tempVertex_v;
+    else
+    {
+        tempVertex_v->next = head->graphEdge[u];
+        head->graphEdge[u] = tempVertex_v;
     }
 
 }
@@ -160,46 +195,115 @@ int InsertEdge(Graph *head, int key)
 void printVertex(Graph *head)
 {
     int i, j;
+    Vertex *tempVertex = NULL;
     printf("Vertex\tEdge\n");
     for(i = 0; i < head->num; i++)
     {
         printf("[%d]\t", i);
+        tempVertex = head->graphEdge[i];
         for(j = 0; j < MAX_VERTEX_SIZE; j++)
         {
-            if(head->graphEdge[j] == NULL)
+            if(tempVertex -> next == NULL)
                 break;
-            printf("%d  ",head->graphEdge[j]->key);
+            else
+            {
+                printf("%d  ",tempVertex->key);
+                tempVertex = tempVertex -> next;
+            }
+                
         }
         printf("\n");
     }
 }
 
-void DepthFirstSearch(Graph *head)
+void DepthFirstSearch(Graph *head, int v)
 {
-    int v;
-    printf("Vertax Number : ");
-    scanf("%d", &v);
-    DFS(head, v);
+    int i;
+    for(i = 0; i < MAX_VERTEX_SIZE; i++)
+    {
+        visited[i] = FALSE;
+    }
+    
+    DFS(head->graphEdge[v], v);
     printf("\n");
 }
 
-void DFS(Graph *graph,int v)
+void DFS(Vertex *head,int v)
 {
     Vertex *w;
     visited[v] = TRUE;
     printf("%5d", v);
-    for (w = graph->graphEdge[v]; w; w = w -> next)
+    for (w = head; w; w = w -> next)
         if (!visited[w->key])
-            DFS(w->next, v);
+            DFS(w, w->key);
 
 }
 
 void BreathFirstSearch()
 {
+    int i;
+    for(i = 0; i < MAX_VERTEX_SIZE; i++)
+    {
+        visited[i] = FALSE;
+    }
+}
+
+void BFS(Graph *head, int v)
+{
+    int i;
+    for(i = 0; i < MAX_VERTEX_SIZE; i++)
+    {
+        visited[i] = FALSE;
+    }
+    Vertex *w;
+    front = -1;
+    rear = -1;
+    
+    printf("%5d", v); /* print */
+    visited[v] = TRUE; /* visit marking */
+    enQueue(v); /* enqueue */
+    
+    while (front)
+    {
+        v = deQueue(&front); /* dequeue */
+        for (w=head->graphEdge[v]; w; w = w->next)
+        if (!visited[w->key]) 
+        {
+            printf("%5d", w->key);
+            enQueue(w->key);
+            visited[w->key] = TRUE;
+        }
+    }
 
 }
 
-void BFS()
+void enQueue(int v)
 {
-    
+    if((rear+1)%MAX_QUEUE_SIZE == front)
+    {
+        printf("Full");
+        return ;
+    }
+    else
+    {
+        rear = (rear+1) % MAX_QUEUE_SIZE;
+        queue[rear] = v;
+    }
+}
+
+int deQueue()
+{
+    int temp = -1;
+
+    if(front == rear)
+    {
+        printf("Empty");
+        return 0;
+    }
+    else
+    {
+        front = (front + 1)%MAX_QUEUE_SIZE;
+        temp = queue[front];
+    }
+    return temp;
 }
